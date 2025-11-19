@@ -1,0 +1,19 @@
+{
+  "image_filename": "diagnosis_report_1_visual.jpg",
+  "image_size": {
+    "width": 1920,
+    "height": 1080
+  },
+  "annotations": [
+    {
+      "label": "crack",
+      "severity": "medium",
+      "bounding_box": {
+        "xmin": 450,
+        "ymin": 300,
+        "xmax": 550,
+        "ymax": 700
+      }
+    }
+  ]
+}
