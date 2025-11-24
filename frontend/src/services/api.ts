@@ -3,7 +3,7 @@ import { useAuthStore } from '@/stores/auth';
 
 // Create an Axios instance
 const apiClient = axios.create({
-  baseURL: 'http://127.0.0.1:8000/api', // Your FastAPI backend URL
+  baseURL: import.meta.env.VITE_API_BASE_URL, // Dynamically set from .env files
   headers: {
     'Content-Type': 'application/json',
   },
