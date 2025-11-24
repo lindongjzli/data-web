@@ -1,7 +1,8 @@
 import os
 import shutil
-from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.responses import FileResponse
+from fastapi import APIRouter, Depends, HTTPException, status, concurrency
+from starlette.responses import FileResponse
+from starlette.background import BackgroundTask
 
 from app.services.security_service import get_current_active_user
 from app.core.config import DATASET_PATH
@@ -26,28 +27,39 @@ async def get_dataset_info():
 async def download_dataset(current_user: dict = Depends(get_current_active_user)):
     """
     Allows authenticated users to download the dataset as a ZIP file.
+    This version is improved to handle cleanup correctly and avoid blocking.
     """
     # Ensure the data directory exists
     if not os.path.isdir(DATASET_PATH):
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Dataset directory not found on server.")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Dataset directory not found on server.")
 
-    # For simplicity, we assume the data is in a folder named 'dataset_source' inside the DATASET_PATH
     source_folder = os.path.join(DATASET_PATH, "dataset_source")
     if not os.path.isdir(source_folder):
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Source dataset not found on server.")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Source dataset folder not found on server.")
 
-    # Create a temporary ZIP file
+    # Define paths for the temporary ZIP file
     zip_filename = f"dataset_{current_user['username']}.zip"
     temp_zip_path = os.path.join(DATASET_PATH, zip_filename)
+    base_zip_name = os.path.splitext(temp_zip_path)[0]
     
-    print(f"Zipping folder {source_folder} to {temp_zip_path}...")
-    shutil.make_archive(os.path.splitext(temp_zip_path)[0], 'zip', source_folder)
-    print("Zipping complete.")
+    try:
+        # Run the blocking I/O operation in a separate thread pool
+        await concurrency.run_in_threadpool(
+            shutil.make_archive, base_name=base_zip_name, format='zip', root_dir=source_folder
+        )
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to create archive: {e}")
 
-    # Send the file and clean up afterwards
+    # Check if the file was created before attempting to send it
+    if not os.path.exists(temp_zip_path):
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Could not create or find the dataset archive.")
+
+    # Create a background task to clean up the temporary file AFTER the response is sent
+    cleanup_task = BackgroundTask(os.remove, temp_zip_path)
+
     return FileResponse(
         path=temp_zip_path,
         filename="TIDD_dataset_v1.zip",
         media_type='application/zip',
-        background=os.remove(temp_zip_path) # Delete the temp file after sending
+        background=cleanup_task
     )
