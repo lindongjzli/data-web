@@ -1,0 +1,16 @@
+[
+  {
+    "id": 1,
+    "name": "诊断报告示例 1",
+    "description": "一份包含图片和JSON的诊断报告。",
+    "imageUrl": "/data/diagnosis_report_1_visual.jpg",
+    "downloadUrl": "/data/image_001.json"
+  },
+  {
+    "id": 2,
+    "name": "诊断报告示例 2 (占位)",
+    "description": "这是一个用于演示的占位数据集。",
+    "imageUrl": "https://via.placeholder.com/400x300.png/eee/888?text=Dataset+Image",
+    "downloadUrl": "/data/image_001.json"
+  }
+]
