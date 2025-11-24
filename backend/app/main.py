@@ -22,8 +22,8 @@ app.add_event_handler("startup", connect_to_mongo)
 app.add_event_handler("shutdown", close_mongo_connection)
 
 # Include API routers
-app.include_router(auth_api.router, prefix="/api/auth", tags=["Authentication"])
-app.include_router(dataset_api.router, prefix="/api/dataset", tags=["Dataset"])
+app.include_router(auth_api.router, prefix="/auth", tags=["Authentication"])
+app.include_router(dataset_api.router, prefix="/dataset", tags=["Dataset"])
 
 
 @app.get("/")
